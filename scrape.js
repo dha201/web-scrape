@@ -1,20 +1,30 @@
-import puppeteer from 'puppeteer';
+/* import puppeteer from 'puppeteer';
 
 const scrape = async () => {
-  const browser = await puppeteer.launch({ headless: false });  // Set to false to see browser actions
+  const browser = await puppeteer.launch({ headless: true });  // Set to true to run in headless mode
   const page = await browser.newPage();
 
   // Step 1: Navigate to the homepage
-  await page.goto('https://www.ratemyprofessors.com/');
-
+  await page.goto('https://www.ratemyprofessors.com/', {
+    waitUntil: 'domcontentloaded',  // Wait until only the DOM is loaded
+    timeout: 5000  // Increase timeout to 60 seconds
+  });
   // Step 2: Handle the cookie consent modal
   try {
-    await page.waitForSelector('.CCPAModal__StyledCloseButton-sc-10x9kq-2', { timeout: 5000 });
-    await page.click('.CCPAModal__StyledCloseButton-sc-10x9kq-2');
-    console.log('Closed the cookie consent modal.');
+    const closeButtonSelector = '.fyxlwo__content .CCPAModal__StyledCloseButton-sc-10x9kq-2';
+    const closeButton = await page.$(closeButtonSelector);
+
+    if (closeButton) {
+      await closeButton.click();
+      console.log('Closing cookie consent modal ...');
+    } else {
+      console.log('Cookie consent modal not found.');
+    }
   } catch (error) {
-    console.log('No cookie consent modal found, or it took too long to appear.');
+    console.log('Error occurred while handling the cookie consent modal:', error);
   }
+
+  console.log('Closed the cookie consent modal successfully!');
 
   // Step 3: Wait for the toggle button to appear and click it
   await page.waitForSelector('.HomepageHero__HeroToggle-rvkinu-3.eOMiLm');
@@ -25,8 +35,11 @@ const scrape = async () => {
   await page.type('input[placeholder="Professor name"]', 'John Otten');
   await page.keyboard.press('Enter');
 
+  ///////////////////
+  
   // Step 5: Wait for the search results page to load
-  await page.waitForNavigation();
+  // await page.waitForNavigation(); // Since the content is static, we do not need to wait for navigation. We can simply wait for the necessary elements to appear.
+  await page.waitForSelector('.TeacherCard__StyledTeacherCard-syjs0d-0');
 
   // Step 6: Find the CardSchool_School and CardName that match, then click the associated TeacherCard
   const professorDetails = await page.evaluate(() => {
@@ -35,7 +48,7 @@ const scrape = async () => {
     const targetSchoolName = 'George Mason University';
     const professorLinks = [];
 
-    for (let card of teacherCards) {
+    teacherCards.forEach(card => {
       const professorNameElement = card.querySelector('.CardName__StyledCardName-sc-1gyrgim-0');
       const schoolElement = card.querySelector('.CardSchool__School-sc-19lmz2k-1');
       
@@ -50,7 +63,7 @@ const scrape = async () => {
           professorLinks.push(href);
         }
       }
-    }
+    });
     return professorLinks;
   });
 
@@ -59,21 +72,26 @@ const scrape = async () => {
       await page.goto(`https://www.ratemyprofessors.com${professorLink}`);
       console.log(`Navigated to the professor's page: ${professorLink}`);
 
-      // Step 7: Extract all ratings and store them in a JSON object
+      // Step 7: Extract all ratings and store them in a JSON object, along with rating, would take again, and difficulty
       const ratings = await page.evaluate(() => {
         const ratingContainers = document.querySelectorAll('.Rating__RatingInfo-sc-1rhvpxz-3.kEVEoU');
+        const overallRatingElement = document.querySelector('.RatingValue__Numerator-qw8sqy-2.liyUjw');
+        const wouldTakeAgainElement = document.querySelectorAll('.FeedbackItem__FeedbackNumber-uof32n-1.kkESWs')[0];
+        const difficultyElement = document.querySelectorAll('.FeedbackItem__FeedbackNumber-uof32n-1.kkESWs')[1];
+
+        const overallRating = overallRatingElement ? overallRatingElement.textContent.trim() : null;
+        const wouldTakeAgain = wouldTakeAgainElement ? wouldTakeAgainElement.textContent.trim() : null;
+        const difficulty = difficultyElement ? difficultyElement.textContent.trim() : null;
+
         const ratingsData = [];
 
         ratingContainers.forEach((container, index) => {
-          // Extract attendance information
           const attendanceElement = container.querySelector('.CourseMeta__StyledCourseMeta-x344ms-0.fPJDHT .MetaItem__StyledMetaItem-y0ixml-0.LXClX span');
           const attendance = attendanceElement ? attendanceElement.textContent.trim() : null;
 
-          // Extract comments
           const commentsElement = container.querySelector('.Comments__StyledComments-dzzyvm-0.gRjWel');
           const comments = commentsElement ? commentsElement.textContent.trim() : null;
 
-          // Store the data
           ratingsData.push({
             comment_number: index + 1,
             attendance: attendance,
@@ -81,7 +99,12 @@ const scrape = async () => {
           });
         });
 
-        return ratingsData;
+        return {
+          overallRating,
+          wouldTakeAgain,
+          difficulty,
+          ratingsData
+        };
       });
 
       console.log(JSON.stringify(ratings, null, 2));
@@ -95,3 +118,4 @@ const scrape = async () => {
 };
 
 scrape();
+ */
